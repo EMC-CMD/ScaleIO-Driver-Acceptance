@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -35,7 +36,7 @@ func TestVolman(t *testing.T) {
 	SetDefaultEventuallyTimeout(10 * time.Second)
 
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cephdriver Cmd Suite")
+	RunSpecs(t, "RexRay Driver Cmd Suite")
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -43,7 +44,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	volmanPath, err = gexec.Build("github.com/cloudfoundry-incubator/volman/cmd/volman", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	driverPath, err = gexec.Build("github.com/cloudfoundry-incubator/cephdriver/cmd/cephdriver", "-race")
+	driverPath, err = gexec.Build("github.com/cloudfoundry-incubator/rexraydriver/cmd/rexraydriver", "-race")
 	Expect(err).NotTo(HaveOccurred())
 	return []byte(strings.Join([]string{volmanPath, driverPath}, ","))
 }, func(pathsByte []byte) {
@@ -52,27 +53,23 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	driverPath = strings.Split(path, ",")[1]
 
 	// read config files
-	keyringFileContents = os.Getenv("CEPH_KEYRING")
-	clusterIp = os.Getenv("CEPH_CLUSTER_IP")
+	// keyringFileContents = os.Getenv("rexray_KEYRING")
+	// clusterIp = os.Getenv("rexray_CLUSTER_IP")
 })
 
 var _ = BeforeEach(func() {
 	var err error
+	tmpDriversPath, err = ioutil.TempDir(os.TempDir(), "rexray-driver-test")
+	Expect(err).NotTo(HaveOccurred())
 
-	driverServerPort = 9750 + GinkgoParallelNode()
-	debugServerAddress2 = fmt.Sprintf("0.0.0.0:%d", 9850+GinkgoParallelNode())
-	driverRunner = ginkgomon.New(ginkgomon.Config{
-		Name: "cephdriverServer",
+	socketPath = path.Join(tmpDriversPath, "<rexray>.sock")
+	unixDriverRunner = ginkgomon.New(ginkgomon.Config{
+		Name: "RexRayServer",
 		Command: exec.Command(
 			driverPath,
-			"-listenAddr", fmt.Sprintf("0.0.0.0:%d", driverServerPort),
-			"-debugAddr", debugServerAddress2,
 		),
-		StartCheck: "cephdriverServer.started",
+		StartCheck: "started",
 	})
-
-	tmpDriversPath, err = ioutil.TempDir(os.TempDir(), "ceph-driver-test")
-	Expect(err).NotTo(HaveOccurred())
 
 	volmanServerPort = 8750 + GinkgoParallelNode()
 	debugServerAddress = fmt.Sprintf("0.0.0.0:%d", 8850+GinkgoParallelNode())
