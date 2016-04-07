@@ -22,6 +22,6 @@ var _ = Describe("Rexray Driver Certification", func() {
 			return volumeName, opts
 		}
 
-		return driverRunner, volmanRunner, volmanServerPort, debugServerAddress, tmpDriversPath, driverServerPort, "rexraydriver", volumeInfo
+		return unixDriverRunner, volmanRunner, volmanServerPort, debugServerAddress, tmpDriversPath, driverServerPort, "rexraydriver", volumeInfo
 	})
 })

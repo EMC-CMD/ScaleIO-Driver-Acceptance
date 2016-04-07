@@ -2,7 +2,6 @@ package acceptance_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -23,7 +22,7 @@ var volmanRunner *ginkgomon.Runner
 var driverPath string
 var driverServerPort int
 var debugServerAddress2 string
-var driverRunner *ginkgomon.Runner
+var unixDriverRunner *ginkgomon.Runner
 var tmpDriversPath string
 
 var keyringFileContents string
@@ -43,8 +42,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	volmanPath, err = gexec.Build("github.com/cloudfoundry-incubator/volman/cmd/volman", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	driverPath, err = gexec.Build("github.com/cloudfoundry-incubator/rexraydriver/cmd/rexraydriver", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	driverPath = "/home/ubuntu/funnyrexray" //todo: inject via ENV varible
+
 	return []byte(strings.Join([]string{volmanPath, driverPath}, ","))
 }, func(pathsByte []byte) {
 	path := string(pathsByte)
@@ -58,17 +57,33 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = BeforeEach(func() {
 	var err error
-	tmpDriversPath, err = ioutil.TempDir(os.TempDir(), "rexray-driver-test")
+	tmpDriversPath = "/etc/docker/plugins/"
 	Expect(err).NotTo(HaveOccurred())
 
-	// socketPath := path.Join(tmpDriversPath, "<rexray>.sock")
-	// unixDriverRunner := ginkgomon.New(ginkgomon.Config{
-	// 	Name: "RexRayServer",
-	// 	Command: exec.Command(
-	// 		driverPath,
-	// 	),
-	// 	StartCheck: "started",
-	// })
+	commandWithEnv := exec.Command(driverPath)
+	currentEnv := os.Environ()
+	newEnv := append(currentEnv, "SCALEIO_PROTECTIONDOMAINNAME=default")
+	newEnv = append(newEnv, "SCALEIO_USERID=fc5118f500000000")
+	newEnv = append(newEnv, "SCALEIO_STORAGEPOOLNAME=default")
+	newEnv = append(newEnv, "SCALEIO_SYSTEMNAME=")
+	newEnv = append(newEnv, "SCALEIO_PROTECTIONDOMAINID=4c9e0aa100000000")
+	newEnv = append(newEnv, "SCALEIO_THINORTHICK=ThinProvisioned")
+	newEnv = append(newEnv, "SCALEIO_SYSTEMID=5c4c45f02c98551c")
+	newEnv = append(newEnv, "REXRAY_STORAGEDRIVERS=scaleio")
+	newEnv = append(newEnv, "SCALEIO_PASSWORD=Some1Example")
+	newEnv = append(newEnv, "SCALEIO_USERNAME=admin")
+	newEnv = append(newEnv, "SCALEIO_USECERTS=true")
+	newEnv = append(newEnv, "SCALEIO_ENDPOINT=https://52.87.123.252/api")
+	newEnv = append(newEnv, "SCALEIO_STORAGEPOOLID=8b3b0c5300000000")
+	newEnv = append(newEnv, "SCALEIO_INSECURE=true")
+	newEnv = append(newEnv, "SCALEIO_VERSION=2.0")
+	commandWithEnv.Env = newEnv
+
+	unixDriverRunner = ginkgomon.New(ginkgomon.Config{
+		Name:       "RexRayServer",
+		Command:    commandWithEnv,
+		StartCheck: "started",
+	})
 
 	volmanServerPort = 8750 + GinkgoParallelNode()
 	debugServerAddress = fmt.Sprintf("0.0.0.0:%d", 8850+GinkgoParallelNode())
