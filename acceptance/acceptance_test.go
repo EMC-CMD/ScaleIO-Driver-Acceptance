@@ -2,6 +2,7 @@ package acceptance_test
 
 import (
 	"github.com/cloudfoundry-incubator/volman/certification"
+	"github.com/nu7hatch/gouuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon"

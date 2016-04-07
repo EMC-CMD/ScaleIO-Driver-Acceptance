@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"testing"
 	"time"
@@ -62,14 +61,14 @@ var _ = BeforeEach(func() {
 	tmpDriversPath, err = ioutil.TempDir(os.TempDir(), "rexray-driver-test")
 	Expect(err).NotTo(HaveOccurred())
 
-	socketPath = path.Join(tmpDriversPath, "<rexray>.sock")
-	unixDriverRunner = ginkgomon.New(ginkgomon.Config{
-		Name: "RexRayServer",
-		Command: exec.Command(
-			driverPath,
-		),
-		StartCheck: "started",
-	})
+	// socketPath := path.Join(tmpDriversPath, "<rexray>.sock")
+	// unixDriverRunner := ginkgomon.New(ginkgomon.Config{
+	// 	Name: "RexRayServer",
+	// 	Command: exec.Command(
+	// 		driverPath,
+	// 	),
+	// 	StartCheck: "started",
+	// })
 
 	volmanServerPort = 8750 + GinkgoParallelNode()
 	debugServerAddress = fmt.Sprintf("0.0.0.0:%d", 8850+GinkgoParallelNode())
